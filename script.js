@@ -1,8 +1,11 @@
+/* -------------------------------------------------------------------------
+   PARA TROCAR O WHATSAPP, MUDE SO A LINHA whatsappNumber ABAIXO.
+   Todo link com data-whatsapp no HTML e reescrito a partir daqui.
+   Formato: codigo do pais + DDD + numero, sem simbolos. Ex.: 5516991234567
+------------------------------------------------------------------------- */
 window.MOVII_CONFIG = Object.freeze({
-    emailjsPublicKey: 'SEU_PUBLIC_KEY',
-    emailjsServiceId: 'SEU_SERVICE_ID',
-    emailjsTemplateId: 'SEU_TEMPLATE_ID',
     whatsappNumber: '5516000000000',
+    whatsappMensagem: 'Olá! Vim pelo site da MovCode e gostaria de conversar sobre um projeto.',
     typewriterWords: [
         'Dashboards claros',
         'Sites sob medida',
@@ -51,6 +54,18 @@ window.MOVII_CONFIG = Object.freeze({
     let letterIndex = 0;
     let deleting = false;
 
+    // O HTML ja vem com a primeira palavra escrita (para o <h1> estar completo
+    // antes do JS rodar). Se ela bate com a lista, comeca apagando dali em vez
+    // de zerar o texto e redigitar — senao o titulo daria um salto visivel.
+    const inicial = typewriterText.textContent.trim();
+    const posicaoInicial = words.indexOf(inicial);
+
+    if (posicaoInicial !== -1) {
+        wordIndex = posicaoInicial;
+        letterIndex = inicial.length;
+        deleting = true;
+    }
+
     function type() {
         const currentWord = words[wordIndex];
 
@@ -78,9 +93,26 @@ window.MOVII_CONFIG = Object.freeze({
         setTimeout(type, speed);
     }
 
-    setTimeout(type, 1000);
+    setTimeout(type, deleting ? 2400 : 1000);
 })();
 
+(() => {
+    // Fonte unica do numero de WhatsApp: MOVII_CONFIG.whatsappNumber.
+    const config = window.MOVII_CONFIG;
+    const links = document.querySelectorAll('[data-whatsapp]');
+
+    if (!config?.whatsappNumber || !links.length) {
+        return;
+    }
+
+    links.forEach((link) => {
+        const texto = link.dataset.whatsapp || config.whatsappMensagem || '';
+        const query = texto ? `?text=${encodeURIComponent(texto)}` : '';
+        link.href = `https://wa.me/${config.whatsappNumber}${query}`;
+        link.rel = 'noopener noreferrer';
+        link.target = '_blank';
+    });
+})();
 
 (() => {
     const yearElement = document.getElementById('anoAtual');
@@ -172,127 +204,6 @@ window.MOVII_CONFIG = Object.freeze({
 })();
 
 (() => {
-    const slider = document.getElementById('marqueeTrack');
-
-    if (!slider) {
-        return;
-    }
-
-    let isPointerDown = false;
-    let isPaused = false;
-    let startX = 0;
-    let dragStartTranslate = 0;
-    let currentTranslate = 0;
-    const speed = 1;
-    let loopWidth = 0;
-    let animationStarted = false;
-
-    function calculateLoopWidth() {
-        const cards = slider.querySelectorAll('.servico-card');
-        if (!cards.length) {
-            return;
-        }
-
-        loopWidth = (cards[0].offsetWidth + 30) * 5;
-    }
-
-    function animate() {
-        if (!isPointerDown && !isPaused) {
-            currentTranslate -= speed;
-            if (Math.abs(currentTranslate) >= loopWidth) {
-                currentTranslate = 0;
-            }
-            slider.style.transform = `translateX(${currentTranslate}px)`;
-        }
-
-        requestAnimationFrame(animate);
-    }
-
-    window.addEventListener('load', () => {
-        requestAnimationFrame(() => {
-            calculateLoopWidth();
-            if (!animationStarted) {
-                animationStarted = true;
-                animate();
-            }
-        });
-    });
-
-    window.addEventListener('resize', calculateLoopWidth);
-
-    slider.addEventListener('mouseenter', () => {
-        isPaused = true;
-    });
-
-    slider.addEventListener('mouseleave', () => {
-        isPaused = false;
-        isPointerDown = false;
-        slider.style.cursor = 'grab';
-    });
-
-    slider.addEventListener('mousedown', (event) => {
-        isPointerDown = true;
-        startX = event.pageX;
-        dragStartTranslate = currentTranslate;
-        slider.style.cursor = 'grabbing';
-    });
-
-    slider.addEventListener('mouseup', () => {
-        isPointerDown = false;
-        slider.style.cursor = 'grab';
-    });
-
-    slider.addEventListener('mousemove', (event) => {
-        if (!isPointerDown) {
-            return;
-        }
-
-        event.preventDefault();
-        currentTranslate = dragStartTranslate + (event.pageX - startX);
-
-        if (currentTranslate > 0) {
-            currentTranslate = 0;
-        }
-
-        if (Math.abs(currentTranslate) >= loopWidth) {
-            currentTranslate = -(loopWidth - 1);
-        }
-
-        slider.style.transform = `translateX(${currentTranslate}px)`;
-    });
-
-    slider.addEventListener('touchstart', (event) => {
-        isPointerDown = true;
-        isPaused = true;
-        startX = event.touches[0].pageX;
-        dragStartTranslate = currentTranslate;
-    }, { passive: true });
-
-    slider.addEventListener('touchend', () => {
-        isPointerDown = false;
-        isPaused = false;
-    });
-
-    slider.addEventListener('touchmove', (event) => {
-        if (!isPointerDown) {
-            return;
-        }
-
-        currentTranslate = dragStartTranslate + (event.touches[0].pageX - startX);
-
-        if (currentTranslate > 0) {
-            currentTranslate = 0;
-        }
-
-        if (Math.abs(currentTranslate) >= loopWidth) {
-            currentTranslate = -(loopWidth - 1);
-        }
-
-        slider.style.transform = `translateX(${currentTranslate}px)`;
-    }, { passive: true });
-})();
-
-(() => {
     const modal = document.getElementById('serviceModal');
     const titleElement = document.getElementById('serviceModalTitle');
     const summaryElement = document.getElementById('serviceModalSummary');
@@ -331,6 +242,7 @@ window.MOVII_CONFIG = Object.freeze({
         const icon = card.querySelector('.servico-icon-dark svg')?.cloneNode(true);
 
         titleElement.textContent = title;
+        titleElement.hidden = false;
         summaryElement.textContent = summary;
         detailElement.textContent = detail;
         iconElement.replaceChildren();
@@ -422,19 +334,28 @@ window.MOVII_CONFIG = Object.freeze({
         const type = card.querySelector('.projeto-tipo')?.textContent.trim() ?? 'Projeto';
         const description = trigger.dataset.projectDescription || card.querySelector('.projeto-body p')?.textContent.trim() || '';
         const tags = Array.from(card.querySelectorAll('.projeto-tag')).map((tag) => tag.textContent.trim());
-        const fallbackImage = card.querySelector('.projeto-photo-slot img')?.getAttribute('src') || 'assets/images/projects/project-cover-default.jpg';
-        const images = (trigger.dataset.projectImages || fallbackImage)
+        const fallbackImage = card.querySelector('.projeto-photo-slot img')?.getAttribute('src') || '';
+        const galleryImages = (trigger.dataset.projectImages || fallbackImage)
             .split(',')
             .map((image) => image.trim())
             .filter(Boolean);
-        const galleryImages = images.length ? images : [fallbackImage];
         let currentImageIndex = 0;
 
         titleElement.textContent = title;
+        titleElement.hidden = false;
         typeElement.textContent = type;
         descriptionElement.textContent = description;
-        imageElement.src = galleryImages[0];
-        imageElement.alt = `Prévia do projeto ${title}`;
+        // Sem capa cadastrada, esconde a galeria em vez de abrir imagem quebrada.
+        const gallery = imageElement.parentElement;
+        if (galleryImages.length) {
+            gallery?.removeAttribute('hidden');
+            imageElement.src = galleryImages[0];
+            imageElement.alt = `Prévia do projeto ${title}`;
+        } else {
+            gallery?.setAttribute('hidden', '');
+            imageElement.removeAttribute('src');
+            imageElement.alt = '';
+        }
         tagsElement.replaceChildren(...tags.map((tag) => {
             const tagElement = document.createElement('span');
             tagElement.textContent = tag;
@@ -474,65 +395,3 @@ window.MOVII_CONFIG = Object.freeze({
         }
     });
 })();
-
-(() => {
-    const contactForm = document.getElementById('contactForm');
-    const formFeedback = document.getElementById('formFeedback');
-    const config = window.MOVII_CONFIG;
-
-    if (!contactForm || !formFeedback || !config) {
-        return;
-    }
-
-    if (window.emailjs?.init) {
-        window.emailjs.init({ publicKey: config.emailjsPublicKey });
-    }
-
-    contactForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const nome = document.getElementById('nome')?.value.trim() ?? '';
-        const email = document.getElementById('email')?.value.trim() ?? '';
-        const mensagem = document.getElementById('mensagem')?.value.trim() ?? '';
-
-        if (!nome || !email || !mensagem) {
-            return;
-        }
-
-        const submitButton = contactForm.querySelector('button[type="submit"]');
-        if (!submitButton) {
-            return;
-        }
-
-        submitButton.disabled = true;
-        submitButton.textContent = 'Enviando...';
-        formFeedback.style.display = 'none';
-
-        try {
-            await window.emailjs.send(config.emailjsServiceId, config.emailjsTemplateId, {
-                nome,
-                email,
-                mensagem,
-                reply_to: email
-            });
-
-            formFeedback.className = 'form-feedback success';
-            formFeedback.textContent = '✓ Mensagem enviada! Retornaremos em breve.';
-            formFeedback.style.display = 'block';
-            contactForm.reset();
-        } catch (error) {
-            console.warn('EmailJS não configurado, redirecionando para WhatsApp.', error);
-            const whatsappText = `Olá, equipe MovCode!\n\nMeu nome é *${nome}*.\nMeu contato: ${email}\n\n*Como vocês podem me ajudar:*\n${mensagem}`;
-            window.open(`https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(whatsappText)}`, '_blank', 'noopener,noreferrer');
-
-            formFeedback.className = 'form-feedback success';
-            formFeedback.textContent = '✓ Redirecionando para o WhatsApp...';
-            formFeedback.style.display = 'block';
-            contactForm.reset();
-        } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = 'Enviar Mensagem';
-        }
-    });
-})();
-
